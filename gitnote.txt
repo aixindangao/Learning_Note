@@ -1,0 +1,131 @@
+git学习笔记
+设定使用者信息：git config --global user.name"使用者名字"
+				git config --global user.email"使用者邮箱"
+创建版本库：git init
+添加两步：1.git add "文件名"
+			添加到暂存区
+		  2.git commit -m "信息（标识名）"
+			添加到版本库
+查看修改：git diff 文件名
+查看全部文件名：ls
+回溯：1.git log 
+		查看历史版本
+	  2.git reset --hard 版本号
+		将工作区回溯到版本库版本
+	  3.git reflog
+		查看历史命令
+	  4.git reset --hard HEAD^^
+		回溯版本，与2相同，其中^代表上个版本，可以任意数量
+	  5.git checkout -- 文件名
+		撤销工作区修改（回到上次提交或推送）
+	  6.git reset HEAD 文件名
+		git reset命令也可以把暂存区的修改回退到工作区。当我们用HEAD时，表示最新的版本。
+删除文件：git rm 文件名
+			记得再提交
+创建ssh密钥：ssh-keygen -t rsa -C "邮箱"
+				其中id_rsa是私钥，id_rsa.pub是公钥
+关联远程库：git remote add 远程库名字 http://github.com:GitHub用户名/learngit.git
+			关联GitHub上的仓库
+			也可以用git@github.com:GitHub用户名/learngit.git(采用ssh协议)
+			Git支持多种协议，包括https，但ssh协议速度最快。
+取消关联远程库：git remote remove 远程库名字
+推送远程库：git push -u 远程库名字 master
+			第一次推送要加-u参数来关联远程库和本地库的分支，后续推送可以简化不使用-u参数
+克隆远程库：git clone http://github.com:GitHub用户名/...(GitHub库名称)
+			同样可以用git@github.com:GitHub用户名/learngit.git(采用ssh协议)
+创建分支：以下命令等价
+		1.git checkout -b 分支名
+			git checkout与git checkout --不是相同的命令
+			-b是创建并切换的参数
+		2.git branch 分支名
+		  git checkout 分支名
+			第一条命令是创建，第二条是切换
+		3.git switch -c 分支名
+			switch也可以用来切换分支，-c是创建并切换参数
+		4.git branch 分支名
+		  git switch 分支名
+			此式与2类似
+查看分支：git branch
+			此时前面加*号的是当前分支
+删除分支：git branch -d 分支名
+			-d即删除参数
+合并分支到当前分支：
+	git merge 要被合并的分支名
+		如果自动合并失败，文件存在冲突则必须手动解决冲突，此时原文件会被修改为冲突版本
+		冲突解决后用git log --graph 可以看到分支的合并情况
+		默认是Fast-forward模式，直接将master指向要被合并的分支名
+	git merge --no-ff -m "信息（标识名）" 要被合并的分支名
+		禁用快速合并将产生一个新的commit，因此要加上-m做上标识
+	注*：合并分支时，加上--no-ff参数就可以用普通模式合并，合并后的历史有分支，能看出来曾经做过合并，而fast forward合并就看不出来曾经做过合并。
+	工作流程：
+		git branch 分支名
+		git checkout 分支名
+		工作...
+		git checkout 原分支
+		git merge --no-ff -m "信息" 分支名
+		git branch -d 分支名
+储藏：git stash
+		用于暂时保存当前不想提交的工作，比如要临时完成其他较简单工作
+	  git stash list
+		显示所有现场
+	  git stash apply 现场名
+		恢复储藏的现场，但不删除现场，如果只有一个现场，后面的现场名可以省略
+		现场名格式：如stash@{0}，与git stash list中一致
+	  git stash drop 现场名
+		删除现场，同样现场名可以省略
+	  git stash pop 现场名
+		恢复的同时删除现场，同样现场名可以省略
+复制修改：git cherry-pick 版本号
+			将目标版本号上的修改复制到当前节点。注意复制的是修改而不是文件
+强制删除：git branch -D 分支名
+			如果要删除没有合并的分支，需要强制删除
+*关于推送分支：
+	*master分支是主分支，因此要时刻与远程同步；
+	*dev分支是开发分支，团队所有成员都需要在上面工作，所以也需要与远程同步；
+	*bug分支只用于在本地修复bug，就没必要推到远程了，除非老板要看看你每周到底修复了几个bug；
+	*feature分支是否推到远程，取决于你是否和你的小伙伴合作在上面开发。
+抓取修改：
+	git pull
+*多人协作的工作模式：
+	1.首先，可以试图用git push origin <branch-name>推送自己的修改；
+	2.如果推送失败，则因为远程分支比你的本地更新，需要先用git pull试图合并；
+	3.如果合并有冲突，则解决冲突，并在本地提交；
+	4.没有冲突或者解决掉冲突后，再用git push origin <branch-name>推送就能成功！
+	5.如果git pull提示no tracking information，则说明本地分支和远程分支的链接关系没有创建，用命令git branch --set-upstream-to <branch-name> origin/<branch-name>。
+衍合分支：
+	git rebase 分支名
+	分支的衍合和合并非常相似，衍合的优势在于可以使得提交历史更加简洁，可以把冲突结点消去
+	注*：关于衍合和合并：
+		git rebase过程相比较git merge合并整合得到的结果没有任何区别，但是通过git rebase衍合能产生一个更为整洁的提交历史。
+		如果观察一个衍合过的分支的历史提交记录，看起来会更清楚：仿佛所有修改都是在一根线上先后完成的，尽管实际上它们原来是同时并行发生的。
+		一般我们使用衍合的目的，是想要得到一个能在远程分支上干净应用的补丁，比如某个项目你不是维护者，但是想帮点忙，最好使用衍合处理。
+		先在自己的一个分支进行开发，当准备向主项目提交补丁的时候，根据最新的orgin/master进行一次衍合操作然后再提交，这样维护者就不需要任何整合工作。
+		实际为：把解决分支补丁同最新主干代码之间的冲突的责任，划转给由提交补丁的人来解决。
+		作为维护项目的人只需要根据你提供的仓库地址做一次快进合并，或者直接采纳你提交的补丁。
+	衍合的风险，请务必遵循如下准则：
+		一旦分支中的提交对象发布到公共仓库，就千万不要对该分支进行衍合操作，否则回滚时会产生问题。
+注*：关于标签：
+	标签是和commit号类似的一种“指针”，可以利用标签快速寻找到需要的版本号，可以认为标签是commit的一个引用
+添加标签：
+	git tag 标签名 commit号
+	可以直接略去commit号，表示在最新的版本上添加标签
+添加带有说明的标签：
+	git tag -a 标签名 -m "说明文字"
+查看标签：
+	1.查看所有标签
+		git tag
+		标签是按照字典顺序排列而非时间顺序排序
+	2.查看标签的详情
+		git show 标签名
+		可以看到标签的commit号和修改时间和标识名
+删除标签：
+	git tag -d 标签名
+	这是删除本地库中的标签的方法
+	git push 远程库名 :refs/tags/标签名
+	删除远程标签
+推送标签：
+	git push 远程库名 标签名
+	这是推送单个标签的方法
+	git push 远程库名 --tags
+	推送所有标签
+	

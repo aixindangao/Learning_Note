@@ -1,0 +1,136 @@
+注意事项：
+	1.SQL语言关键字不区分大小写，但表名列名不一定区分大小写
+		一般约定：SQL关键字大写，表名列名小写
+	2.MySQL本身实际上只是一个SQL接口，它的内部还包含了多种数据引擎
+		一般使用innoDB引擎
+	3.通常情况下，字段应该避免允许为NULL。不允许为NULL可以简化查询条件，加快查询速度，也利于应用程序读取数据后无需判断是否为NULL。 
+	4.选取主键的一个基本原则是：不使用任何业务相关的字段作为主键
+	5.使用自增整数类型作为主键时，优先考虑BIGINT自增类型，即BIGINT NOT NULL AUTO_INCREMENT类型
+	6.没有必要的情况下，我们尽量不使用联合主键，因为它给关系表带来了复杂度的上升。
+	7.可以把一个大表拆成两个一对一的表，目的是把经常读取和不经常读取的字段分开，以获得更高的性能。
+	8.可以对一张表创建多个索引。索引的优点是提高了查询效率，缺点是在插入、更新和删除记录时，需要同时修改索引，因此，索引越多，插入、更新和删除记录的速度就越慢
+	9.不带FROM子句的SELECT语句有一个有用的用途，就是用来判断当前到数据库的连接是否有效。许多检测工具会执行一条SELECT 1;来测试数据库连接。
+	10.使用SELECT查询时查询结果集通常是根据主键排序
+	11.多表查询的结果集可能非常巨大，要小心使用
+	12.在执行UPDATE语句时要非常小心，最好先用SELECT语句来测试WHERE条件是否筛选出了期望的记录集，然后再用UPDATE更新
+	13.information_schema、mysql、performance_schema和sys是系统库，不要去改动它们。其他的是用户创建的数据库。
+概念相关：
+	1.记录：每一行数据
+	2.字段：每一列数据
+	3.联合主键：用多个字段标识记录，允许一个字段重复，但不允许都重复
+	4.外键：通过一个字段将数据与另一个表联系起来，外键既可以通过数据库来约束，也可以不设置约束，仅依靠应用程序的逻辑来保证。
+	5.索引：关系数据库中对某一列或多个列的值进行预排序的数据结构
+	6.连接查询：对多个表进行JOIN运算，简单地说，就是先确定一个主表作为结果集，然后，把其他表的行有选择性地“连接”在主表结果集上。
+	
+操作相关：
+	1.定义外键约束：
+		ALTER TABLE 约束表名
+		ADD CONSTRAINT 约束名称
+		FOREIGN KEY (字段名)
+		REFERENCES 引用表名 (引用表对应字段名);
+	2.删除外键约束
+		ALTER TABLE 约束表名
+		DROP FOREIGN KEY 约束名称;
+	3.创建索引
+		ALTER TABLE 表名
+		ADD INDEX 索引名 (字段名);
+	4.创建唯一索引
+		ALTER TABLE 表名
+		ADD UNIQUE INDEX 索引名 (字段名);
+		唯一索引相当于一般的索引加上唯一约束
+	5.创建唯一约束
+		ALTER TABLE 表名
+		ADD CONSTRAINT 约束名 UNIQUE (字段名);
+		唯一约束没有创建索引
+	6.查询数据
+		a)基本查询
+			SELECT * FROM 表名
+			其中SELECT是关键字，表示将要执行一个查询，*表示“所有列”，FROM表示将要从哪个表查询。
+			该命令将查询出表中的所有数据，查询结果是一个二维表
+		b)条件查询
+			SELECT * FROM 表名 WHERE 条件表达式
+			条件表达式如：score > 80;
+			与：多个条件表达式同时满足可以用AND连接，如：score > 80 AND gender = 'M'
+			或：多个条件表达式满足一项可以用OR连接，如：score > 80 OR gender = 'F'
+			非：不满足条件用NOT，如：NOT score < 70
+		注*：条件表达式常用的有相等，大于，小于等，其中，不等于表示为"<>"
+			 条件表达式“相似”，用LIKE，如：name LIKE 'ab%' ，%表示任意数量任意字符
+			 条件表达式“选择”，用IN， 如：score IN (60, 90)，指score为60或90的
+			 条件表达式“之间”，用BETWEEN AND结构，如：score BEWEEN 60 AND 90，指score在60到90之间的包括60和90
+		c)投影查询
+			SELECT 查询字段 FROM 表名；
+			其中多个查询字段用","连接。同样，可以用WHERE加入条件
+			可以在要查询的字段后面加上一个新的字段名来取别名，这样查询结果中的字段名改为重命名的字段名，但这仅仅改变输出的字段名，不影响原有字段名
+		d)排序
+			SELECT 查询字段 FROM 表名 ORDER BY 排序根据的字段
+			使用ORDER BY指定排序的根据
+			如果要求倒序，则在排序字段后添加DESC表示倒序
+			如果要求进一步排序，即前项相同时采用后项排序的，直接用","连接多个字段
+		e)分页查询
+			SELECT 查询字段 FROM 表名 ORDER BY 败絮根据字段 LIMIT 每页字段数 OFFSET 跳过前几号记录;
+			如：SELECT id, name, gender, score FROM students ORDER BY score DESC LIMIT 3 OFFSET 0;
+			如果offset超过了最大查询量就会得到一个空的结果集
+			可以将LIMIT 15 OFFSET 30简写为LIMIT 30, 15
+		f)聚合查询
+			SELECT COUNT(*) 结果集的列名 FROM 表名;
+			聚合查询是找出符合条件的数据的聚合函数的查询方式，其中，COUNT是统计个数的聚合函数
+			SUM():求和，要求查询对象为数值类型
+			AVG():求平均值，要求查询对象为数值类型
+			MAX():求最大值，不一定要数值类型
+			MIN():求最小值，不一定要数值类型
+		g)多表查询(笛卡尔查询)
+			SELECT * FROM 表名1,表名2;
+			多表查询结果集的列数是两表的列数之和，行数是两表的行数之积。即查询结果是两表的笛卡尔积
+			同样可以通过投影查询来给每个表的字段取别名，如：SELECT students.id students_id FROM students, classes;
+		可以将上述查询方式结合，在FROM后给表取别名从而简化输入，如：
+			SELECT s.id sid, s.name, s.gender, s.score, c.id cid, c.name cname FROM students s, classes c WHERE s.gender = 'M' AND c.id = 1;
+		h)连接查询
+			连接查询是在查询一个表的基础上希望添加另一个表的部分信息的查询办法，有多种JOIN选择
+			连接查询的基本结构是：SELECT ... FROM tableA ??? JOIN tableB ON tableA.column1 = tableB.column2;
+			JOIN查询的写法是：
+				1.先确定主表，仍然使用FROM <表1>的语法；
+				2.再确定需要连接的表，使用 ??? JOIN <表2>的语法；
+				3.然后确定连接条件，使用ON <条件...>，如：students.class_id = classes.id，表示students表的class_id列与classes表的id列相同的行需要连接；
+				4.可选：加上WHERE子句、ORDER BY等子句。
+			Ⅰ.INNER JOIN
+				将两表都存在的记录选出，即取交集
+			Ⅱ.LEFT OUTER JOIN
+				将table1中的记录全部选出，并在对方不存在的字段上填写NULL
+			Ⅲ.RIGHT OUTER JOIN
+				将table2中的记录全部选出，并在对方不存在的字段上填写NULL
+			Ⅳ.FULL OUTER JOIN
+				将两表中的所有记录选出，即取并集，并在对方不存在的字段上填写NULL
+	7.修改数据
+		a)插入记录
+			INSERT INTO 表名 (字段名1,字段名2,...) VALUES (值1,值2,...);
+			注意，自增字段不需要列出
+			如果要一次性添加多条记录，只需要在最后添加括号与值即可
+		b)更新已有记录
+			UPDATE 表名 SET 字段1=值1,字段2=值2,... WHERE 条件;
+			如果符合条件的记录有多条，将会把所有符合条件的记录修改
+			修改可以是表达式，如：UPDATE students SET score=score+10 WHERE score<80;
+			如果WHERE条件没有匹配到任何记录，UPDATE也不会报错，也不会有记录被修改
+			注意，如果没有WHERE条件，整个表中的数据都会被更新
+		c)删除已有记录
+			DELETE FROM 表名 WHERE 条件;
+			同样，如果没有条件，所有数据都会被删除
+MySQL相关：
+	进入MySQL：mysql -u root -p
+	库：
+		列出所有数据库：SHOW DATABASES;
+		创建新数据库：CREATE DATABASE 数据库名;
+		删除数据库：DROP DATABASE 数据库名;
+			删除数据库会把库中的所有表删除
+		切换数据库：USE 数据库名;
+	表：
+		列出当前库所有表：SHOW TABLES;
+		查看表的结构：DESC 表名;
+		创建表：CREATE TABLE 表名;
+		删除表：DROP TABLE 表名;
+	表内：
+		替换或插入记录：REPLACE INTO 表名 (字段1，字段2...) VALUES (数据);
+			若相同主键的记录不存在则直接添加，否则将替换原有记录
+		更新或插入记录：INSERT INTO 表名 (字段1，字段2...) VALUES (数据) ON DUPLICARE KEY UPDATA 要更新的内容;		
+			相同主键记录不存在直接添加，否则更新原有记录，要更新的内容如：name='小明',gender='F'
+		插入或忽略记录：INSERT IGNORE INTO 表名	(字段1，字段2...) VALUES (数据);
+			若相同主键记录存在则不执行任何操作

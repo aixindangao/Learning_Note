@@ -1,0 +1,144 @@
+注意事项：
+1.Class类的构造方法时private，只有JVM可以创建Class类实例
+2.Class实例是唯一的
+3.通过反射读写字段是一种非常规方法，它会破坏对象的封装
+~反射~
+Class类
+	JVM在每次读取到一个class类型时创建一个Class类型的实例并关联
+	JVM持有的每一个Class实例指向一个数据类型class或interface
+	每个Class实例里保存了该class的所有信息，因此可以通过实例获取class的所有信息
+	获取Class实例的方法有三种：
+		1.通过类的静态字段class获取，如：
+			Class cls = String.class	//任何类一经创建就可以使用.class
+		2.通过实例变量提供的getClass()方法，如：
+			String s = "Hello";
+			Class cls = s.getClass();
+		3.如果知道一个class的完整类名，可以用Class.forName()获取，如：
+			Class cls = Class.forName("java.lang.String");
+	由于Class实例是唯一的，上述三个实例是同一个实例
+	Class实例可以直接用"=="比较
+	class类有多种方法获取相关信息
+	JVM是在第一次用到class是才将相关类加载到class中
+访问字段
+	Class类中有以下方法来获取字段：	
+		Field getField(name)：根据字段名获取某个public的field（包括父类）
+		Field getDeclaredField(name)：根据字段名获取当前类的某个field（不包括父类）
+		Field[] getFields()：获取所有public的field（包括父类）
+		Field[] getDeclaredFields()：获取当前类的所有field（不包括父类）
+	Field对象包含字段的所有信息，获取这些信息的方法有：		
+		String getName()：返回字段名称，例如，"name"；
+		class getType()：返回字段类型，也是一个Class实例，例如，返回String.class；
+		int getModifiers()：返回字段的修饰符，它是一个int，不同的bit表示不同的含义。
+	解析getModifiers()返回值可以使用静态方法，如：
+		int m = String.class.getDeclareField("value").getModifiers;
+		Modifier.isFinal(m);
+		Modifier.isPublic(m);
+		Modifier.isProtected(m);
+		Modifier.isPrivate(m);
+		Modifier.isStatic(m);
+	获取字段值：
+		先获取Class实例，再获取Field实例，然后用Field.get(Object)获取实例指定字段的值
+		如果获取的是一个private字段，就会得到一个IllegalAccessException异常
+		如果要强制获取，则在Field.get(Object)获取前添加一个Field.setAccessible(true)获取权限
+		如果JVM运行期存在SecurityManager，那么它会根据规则进行检查，有可能阻止setAccessible(true)
+	设定字段值：
+		通过Field.set(Object,Object)设置字段值，其中第一个Object为指定的实例，第二个Object为待修改的值
+		同样，要修改private或protected字段要先获取权限
+调用方法
+	可以通过以下方法获取方法：
+	    Method getMethod(name, Class...)：获取某个public的Method（包括父类）
+		Method getDeclaredMethod(name, Class...)：获取当前类的某个Method（不包括父类）
+		Method[] getMethods()：获取所有public的Method（包括父类）
+		Method[] getDeclaredMethods()：获取当前类的所有Method（不包括父类）
+	Method对象中包含方法的所有信息，获取这些信息的方法有：	
+		getName()：返回方法名称，例如："getScore"；
+		getReturnType()：返回方法返回值类型，也是一个Class实例，例如：String.class；
+		getParameterTypes()：返回方法的参数类型，是一个Class数组，例如：{String.class, int.class}；
+		getModifiers()：返回方法的修饰符，它是一个int，不同的bit表示不同的含义。
+	调用方法：
+		获取Class实例后，通过getMethod方法获取Method实例后调用invoke方法，如：
+			// String对象:
+			String s = "Hello world";
+			// 获取String substring(int)方法，参数为int:
+			Method m = String.class.getMethod("substring", int.class);
+			// 在s对象上调用该方法并获取结果:
+			String r = (String) m.invoke(s, 6);
+			// 打印调用结果:
+			System.out.println(r);
+		如果要获取重载方法需要给以正确的参数
+		Method实例调用invoke方法相当于调用目标方法，invoke的参数为对象实例，后续参数为方法参数
+	调用静态方法：
+		调用静态方法时无需指定实例对象，因此invoke方法传入的第一个参数为null
+	调用非public方法：
+		同样，用Method.setAccessible(true)获取权限才能调用
+	多态：
+		调用反射方法时同样符合多态规则
+调用构造方法
+	通过反射创建新实例需要调用Class提供的newInstance()方法
+	Class.newInstance()只能调用该类的无参构造方法，如果构造方法带有参数或者不是public就无法调用
+	可以通过Constructor对象创建实例，Constructor队形中包含一个构造方法的所有信息，可以创建一个实例
+	通过Class实例获取Constructor的方法如下：
+		getConstructor(Class...)：获取某个public的Constructor；
+		getDeclaredConstructor(Class...)：获取某个Constructor；
+		getConstructors()：获取所有public的Constructor；
+		getDeclaredConstructors()：获取所有Constructor。
+	Constructor总是当前类定义的构造方法，不考虑父类，不存在多态问题，如：
+		public static void main(String[] args) throws Exception {
+			// 获取构造方法Integer(int):
+			Constructor cons1 = Integer.class.getConstructor(int.class);
+			// 调用构造方法:
+			Integer n1 = (Integer) cons1.newInstance(123);
+			System.out.println(n1);
+
+			// 获取构造方法Integer(String)
+			Constructor cons2 = Integer.class.getConstructor(String.class);
+			Integer n2 = (Integer) cons2.newInstance("456");
+			System.out.println(n2);
+		}
+	调用非public方法时同样会产生异常，需要先通过setAccessible(true)来设置允许访问
+获取继承关系
+	获取父类的Class：
+		调用一个Class实例的class.getSuperclass()方法可以获取其父类的Class
+	获取interface：
+		由于一个类可能实现多个接口，因此，class.getInterfacecs()方法返回的是Class[]
+		但getInterfaces()只返回当前类实现的接口，不包括父类实现的接口类型
+	继承关系：
+		对于两个Class实例，要判断一个向上转型是否成立，可以调用isAssignableFrom()，如：
+			Integer.class.isAssignableFrom(Integer.class); // true，因为Integer可以赋值给Integer
+			Number.class.isAssignableFrom(Integer.class); // true，因为Integer可以赋值给Number
+			Object.class.isAssignableFrom(Integer.class); // true，因为Integer可以赋值给Object
+			Integer.class.isAssignableFrom(Number.class); // false，因为Number不能赋值给Integer
+		效果相当于instanceof
+动态代理
+	Java标准库提供了动态代理功能，允许在运行期动态创建一个接口的实例
+	实现方法如下：
+		1.定义一个InvocationHandler实例，它负责实现接口的方法调用；
+		2.通过Proxy.newProxyInstance()创建interface实例，它需要3个参数：
+			a)使用的ClassLoader，通常就是接口类的ClassLoader；
+			b)需要实现的接口数组，至少需要传入一个接口进去；
+			c)用来处理接口方法调用的InvocationHandler实例。
+		3.将返回的Object强制转型为接口。
+	实现代码如下：
+		public class Main {
+			public static void main(String[] args) {
+				InvocationHandler handler = new InvocationHandler() {//匿名类
+					@Override
+					public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+						System.out.println(method);
+						if (method.getName().equals("morning")) {
+							System.out.println("Good morning, " + args[0]);
+						}
+						return null;
+					}
+				};
+				Hello hello = (Hello) Proxy.newProxyInstance(
+					Hello.class.getClassLoader(), // 传入ClassLoader
+					new Class[] { Hello.class }, // 传入要实现的接口
+					handler); // 传入处理调用方法的InvocationHandler
+				hello.morning("Bob");
+			}
+		}
+
+		interface Hello {
+			void morning(String name);
+		}

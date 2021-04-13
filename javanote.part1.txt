@@ -1,0 +1,348 @@
+注意事项：
+	1.Java中的字符串类型是String，注意大写
+	2.同样传递数组是传递的是指针，改动数组，调用内部也改变
+	3.如果修改一个常数数组，将直接改变指向的位置
+	4.private 是完全私有的,只有当前类中的成员能访问到；protected 是受保护的,只有当前类的成员与继承该类的类才能访问
+	  对于类外private和protected完全相同
+	5.如果父类没有默认的构造方法，子类就必须显式调用super()并给出参数以便让编译器定位到父类的一个合适的构造方法
+	6.子类不会继承父类的构造方法，默认构造方法也是编译器自动生成的而不是继承的
+	7.sealed类在Java 15中目前是预览状态，要启用它，必须使用参数--enable-preview和--source 15
+	8.区分继承和组合：继承是is关系，而组合是has关系
+	9.加上@Override可以让编译器帮助检查是否进行了正确的覆写。希望进行覆写，但是不小心写错了方法签名，编译器会报错。但这不是必须的
+	10.一个类只能继承自一个类，但可以实现多个接口
+	11.Java中的接口和编程接口是不同术语
+	12.静态方法常用于工具类或辅助方法，Java程序的入口main()也是静态方法。
+	13.如果不确定是否需要public，就不声明为public，即尽可能少地暴露对外的字段和方法
+	14.一个.java文件只能包含一个public类，但可以包含多个非public类。如果有public类，文件名必须和public类的名字相同
+自动推断变量类型：
+	用var代替变量类型，如var Hong = new Student相当于Student Hong = new Student
+switch-case：
+	可以用->代替:从而忽略break，如：
+		int opt = switch (fruit) {
+            case "apple" -> 1;
+            case "pear", "mango" -> 2;
+            default -> 0;
+        }; // 注意赋值语句要以;结束
+	同时允许在赋值语句中使用，此时switch相当于函数，若要在->后执行多条语句，需要加{}
+	如果要在switch-case赋值语句中进行较为复杂的操作，可以用yield返回值，相当于return，如：
+		int opt = switch (fruit) {
+				case "apple" -> 1;
+				case "pear", "mango" -> 2;
+				default -> {
+					int code = fruit.hashCode();
+					yield code; // switch语句返回值
+				}
+			};
+for-each：
+	可以在for中直接访问可迭代类型的元素，如：
+		int[] ns = { 1, 4, 9, 16, 25 };
+        for (int n : ns) {
+            System.out.println(n);
+        }
+面向对象：
+	对象类用class定义，类中的字段(field)在声明时注意声明private或public，同样，方法(method)在声明时也要声明公有或私有
+		公有(public)：一个class文件仅允许一个public类，允许跨包使用
+		私有(private)：只在内部类中使用，不允许子类使用
+		保护(protected)：只在内部类中使用，仅允许子类使用
+		默认(default)：默认的类
+this变量：
+	在类的方法中可以用this表示当前实例，如果没有同名局部变量，也可以省略，直接用字段
+可变参数：
+	可以用“类型...”定义可变参数，相当于数组类型，如：
+		class Group {
+			private String[] names;
+
+			public void setNames(String... names) {
+				this.names = names;
+			}
+		}
+	调用时可以输入任意多个String，可以输入0个String，但不能输入null
+构造方法：
+	构造方法就是类名，没有返回值(甚至不用写void)，调用构造方法时必须用new操作符
+	如果没有定义构造方法，会自动产生一个没有内容的构造方法；如果已经定义了构造方法就不会自动创建空构造方法
+	可以在声明字段的时候直接初始化，但是优先级次于构造方法
+	一个构造方法可以调用其他构造方法，这样做的目的是便于代码复用。调用其他构造方法的语法是this(…)，如：
+		public Person(String name, int age) {
+			this.name = name;
+			this.age = age;
+		}
+		public Person(String name) {
+			this(name, 18); // 调用另一个构造方法Person(String, int)
+		}
+继承：
+	在声明类时通过extends关键字来实现继承，如：
+		class Student extends Person
+	每一个类都有且仅有一个父类(除了Object)，如果一个类没有明确写继承自一个类则默认继承自Object类
+	在声明子类的字段和方法时只用将父类没有的字段和方法定义即可
+	子类无法访问父类的private字段或方法，但是可以访问protected的字段和方法，可以用protected取代private
+super()：
+	super表示父类，在调用父类的字段和方法时使用
+	但实际上编译器会自动定位到父类中，但有如下特例
+*注意：子类在构造方法中如果没有调用父类的构造方法就会自动调用super()(即无参数的构造方法)，如果不存在super()，就会出错，解决方法是手动调用父类的构造方法，如：
+	class Person {
+		protected String name;
+		protected int age;
+
+		public Person(String name, int age) {
+			this.name = name;
+			this.age = age;
+		}
+	}
+
+	class Student extends Person {
+		protected int score;
+
+		public Student(String name, int age, int score) {
+			super(name,age);	//略去这一行则报错
+			this.score = score;
+		}
+	}
+阻止继承：
+	sealed修饰class，并通过permits明确可以从该类继承的子类名，如：
+		public sealed class Shape permits Rect, Circle, Triangle
+		则只有Rect, Circle, Triangle可以继承自Shape类，其他类禁止继承
+	final修饰class表示这个类不能被继承，这个类中的所有成员方法都会被隐式的转化为final方法
+	另外：final还可以修饰方法和字段
+		修饰方法：
+			禁止该方法在子类中被覆写
+		修饰字段：
+			必须显式初始化，不能再被修改，一般final与static同时修饰某个字段，所有字母都大写，称为final常量
+		修饰局部变量：
+			一旦初始化就不能再修改，相当于C中的const。final修饰引用类型变量时，是指这个引用类型不能再指向其他对象，可以修改它的属性值
+		修饰方法形参：
+			在方法体中不能再修改final形参的值
+向上转型：
+	可以将一个子类安全地转变为父类的赋值，如：(其中Student>Person>Object)
+		Student s = new Student();
+		Person p = s; // upcasting, ok
+		Object o1 = p; // upcasting, ok
+		Object o2 = s; // upcasting, ok
+	向上转型永远是安全的
+向下转型：
+	向下转型不一定成功，父类不能变成子类，因为子类功能比父类多，多的功能无法凭空变出来。只能向上转型过的子类恢复。如：
+		Person p1 = new Student(); // upcasting, ok
+		Person p2 = new Person();
+		Student s1 = (Student) p1; // ok
+		Student s2 = (Student) p2; // runtime error! ClassCastException!
+	可以用instanceof操作符判断是否是目标类型或目标类型的子类，即可否向下转型成目标类型，如：
+		Person p = new Student();
+		if (p instanceof Student) Student s = (Student) p; //// 只有判断成功才会向下转型，此处成功
+覆写：
+	可以在子类中定义一个和父类名称和参数以及返回值完全一样的方法，称为覆写
+	*如果子类覆写了父类的方法，而一个实际类型为子类，引用类型为父类的变量调用覆写方法，实际调用的应该是子类的方法
+多态：
+	针对某个类型的方法调用，真正执行的方法取决于运行时期实际类型的方法；
+	即对于某个被覆写的方法，只有在运行期间才能决定调用的是子类方法还是父类方法，如：
+		class Income {	//一般收入
+			protected double income;
+			public double getTax() {
+				return income * 0.1; // 税率10%
+			}
+		}
+		class Salary extends Income { //工资收入
+			@Override
+			public double getTax() { //减去5000后10%
+				if (income <= 5000) {
+					return 0;
+				}
+				return (income - 5000) * 0.2;
+			}
+		}
+		class StateCouncilSpecialAllowance extends Income {	//特殊津贴免税
+			@Override
+			public double getTax() {
+				return 0;
+			}
+		}
+		public class Main {
+			public static void main(String[] args) {
+				// 给一个有普通收入、工资收入和享受国务院特殊津贴的小伙伴算税:
+				Income[] incomes = new Income[] {
+					new Income(3000),
+					new Salary(7500),
+					new StateCouncilSpecialAllowance(15000)
+				};
+				System.out.println(totalTax(incomes));
+			}
+
+			public static double totalTax(Income... incomes) {
+				double total = 0;
+				for (Income income: incomes) {
+					total = total + income.getTax();
+				}
+				return total;
+			}
+		}
+	利用多态，此时所有Income类和子类实例都使用“最子类”类的方法
+	多态的功能，就是允许添加更多类型的子类实现功能扩展，却不需要修改基于父类的代码
+	多态中子类的覆写必须和父类有一样的参数和返回值
+	可以用super调用父类被覆写的方法
+抽象类：
+	如果在多态中父类的方法没有实际意义，仅仅提供一个模板，则可以将其定义为抽象方法
+	将一个方法声明为abstract，没有任何语句，这一方法必须被子类覆写
+	抽象方法不能被实例化，因此包含抽象方法的类必须是抽象类，即用abstract修饰类，如：
+		abstract class Person {
+			public abstract void run();
+		}
+
+		class Student extends Person {
+			@Override
+			public void run() {
+				System.out.println("Student.run");
+			}
+		}
+	抽象类的方法不一定全是抽象方法
+	抽象类是多态的延申
+接口：(Java8后允许声明常量字段)
+	如果将抽象类进一步抽象，就形成了接口，接口是没有字段且所有方法都是抽象方法的抽象类
+	可以用interface来声明一个接口
+	接口中的抽象方法不用加abstract和public或private
+	如果要用一个具体的类来实现接口，需要使用implements关键字，如：
+		interface Person {
+			void run();
+			String getName();
+		}
+		class Student implements Person {
+			private String name;
+
+			public Student(String name) {
+				this.name = name;
+			}
+
+			@Override
+			public void run() {
+				System.out.println(this.name + " run");
+			}
+
+			@Override
+			public String getName() {
+				return this.name;
+			}
+		}
+	一个类可以实现多个接口
+*注：抽象类和接口
+				abstract class				interface
+继承/实现		只能extends一个class		可以implements多个interface
+字段			可以定义实例字段			不能定义实例字段
+抽象方法		可以定义抽象方法			全部都是抽象方法
+非抽象方法		可以定义非抽象方法			可以定义default方法
+
+接口继承：
+	接口可以继承自另一个接口，接口的继承相当于扩展了接口的方法
+default方法：
+	在接口中可以声明默认方法即default方法，其实现在接口中声明
+	default方法不需要但可以覆写，且继承类中默认拥有
+	如果类实现了两个接口且有同名的default方法时必须覆写该方法
+静态字段：
+	所有实例都会共享静态字段，静态字段不属于实例
+	静态字段的命名方法是public(private...) static int(char...)
+	不推荐用实例变量去访问静态字段，推荐用类名来访问
+静态方法：
+	调用静态方法不需要实例变量，直接用类名调用，类似C语言的函数
+	静态方法同样不属于实例，不能调用this变量
+	接口可以定义静态字段，但静态变量只能是public static final类型，如果不加任何修饰符，编译器会自动将接口字段变为public static final类型
+包：
+	包就是名字空间，相当于c++的namespace，在声明类时应该在第一行声明类属于的包
+	如：
+		package ming; // 申明包名ming
+
+		public class Person {
+		}
+	完整类名应该是ming.Person
+	包没有父子关系，任何包之间都没有继承关系
+引用其他包中的类：
+	如：小明的ming.Person类想要引用小军的jun.Arrays类
+	法1：直接引用，如：
+		package ming;
+
+		public class Person {
+			public void run() {
+				mr.jun.Arrays arrays = new mr.jun.Arrays();
+			}
+		}
+	法2：import语句
+		package ming;
+
+		import mr.jun.Arrays;
+
+		public class Person {
+			public void run() {
+				Arrays arrays = new Arrays();
+			}
+		}
+	如果在写import时使用*，可以将目标包下面的所有class都导入(改为import mr.jun.*;即可)，但不推荐使用
+	法3：import static语句——作用是导入一个类的静态字段和静态方法
+类名称编译规则：
+    如果是完整类名，就直接根据完整类名查找这个class；
+    如果是简单类名，按下面的顺序依次查找：
+        查找当前package是否存在这个class；
+        查找import的包是否包含这个class；
+        查找java.lang包是否包含这个class。
+	如果以上规则无法确认，则报错
+	如果两个class类名相同，则只能import一个，另一个必须写完整类名
+作用域：
+	public类型的class和interface可以被其他包的类访问
+	public类型的field和method可以被其他类访问，前提是有访问class的权限
+	private类型的field和method不能被其他类访问，即访问权限被限定在class内部，但嵌套类中可以访问private方法
+	protected类型的方法和字段可以被子类或在包内被访问
+	局部变量的作用域与C语言相同
+内部类：(Nested Class)
+	Inner Class：(内置类)
+		如果一个类被定义在一个类的内部，这个类就是Inner Class。
+		要实例化一个Inner类，必须先创建一个Outer的实例，如：
+			public class Main {
+				public static void main(String[] args) {
+					Outer outer = new Outer("Nested"); // 实例化一个Outer
+					Outer.Inner inner = outer.new Inner(); // 实例化一个Inner
+					inner.hello();
+				}
+			}
+
+			class Outer {
+				private String name;
+
+				Outer(String name) {
+					this.name = name;
+				}
+
+				class Inner {
+					void hello() {
+						System.out.println("Hello, " + Outer.this.name);
+					}
+				}
+			}
+		注意到，Inner可以通过Outer.this访问Outer的实例
+		Inner Class可以访问Outer Class的private字段和方法
+	Anonymous Class：(匿名类)
+		在方法内部通过匿名类来定义，在定义匿名类的同时就必须实例化
+		匿名类可以实现接口，也可以继承自普通类，其中可以实现方法或者覆写方法，如：
+			public class Main {
+				public static void main(String[] args) {
+					Outer outer = new Outer("Nested");
+					outer.asyncHello();
+				}
+			}
+
+			class Outer {
+				private String name;
+
+				Outer(String name) {
+					this.name = name;
+				}
+
+				void asyncHello() {
+					Runnable r = new Runnable() {	//Runnable是一个接口，此处是声明一个实现接口的匿名类并实例化
+						@Override
+						public void run() {
+							System.out.println("Hello, " + Outer.this.name);
+						}
+					};
+					new Thread(r).start();
+				}
+			}
+	Static Nested Class:(静态内部类)
+		用static修饰的内部类不在依附于Outer实例，也不能调用Outer.this，但可以访问Outer的private字段和方法
+classpath和jar：
+	(暂不学习)
+模块：
+	(暂不学习)

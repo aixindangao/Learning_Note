@@ -1,0 +1,82 @@
+注意事项：
+1.Java访问集合总是通过统一的方式：迭代器(Iterator)来实现
+2.Java的集合有部分是遗留类和遗留接口，不应该使用，如Hashtable，Vector，Stack，Enumeration<E>等
+~集合~
+集合简介
+	集合即多个元素构成的整体，数组相较于集合有以下限制：
+		1.初始化后大小不可变
+		2.只能按索引顺序存取
+	Collection
+		Collection时除Map外所有集合类的根接口，Java的java.util报中主要提供了三种类型集合：
+			List：一种有序列表的集合
+			Set：一种保证没有重复元素的集合
+			Map：一种通过键值对查找的映射表集合
+使用List
+	List是最基础的一种集合：有序列表
+	List<E>的主要接口方法有：
+		在末尾添加一个元素：boolean add(E e)
+		在指定索引添加一个元素：boolean add(int index, E e)
+		删除指定索引的元素：int remove(int index)
+		删除某个元素：int remove(Object e)
+		获取指定索引的元素：E get(int index)
+		获取列表大小（包含元素的个数）：int size()
+	List<E>接口的实现方式主要有ArrayList和LinkedList，它们分别通过数组和链表实现List
+	两者区别：
+							ArrayList			LinkedList
+		获取指定元素		速度很快			需要从头开始查找元素
+		添加元素到末尾		速度很快			速度很快
+		在指定位置添加删除	需要移动元素		不需要移动元素
+		内存占用			少					较大
+	总是优先使用ArrayList
+	List的特点
+		List接口允许添加重复的元素，即List内部的元素可以重复
+		List也允许添加null
+	创建List
+		除了使用ArrayList和LinkedList，我们还可以通过List接口的of方法，给定元素快速创建List，如：
+			List<Integer> list = List.of(1, 2, 4);
+		但是List.of()不接受null值，如果传入null会抛出NullPointerException异常
+	遍历List
+		可以用for配合get(int)方法遍历，但不推荐，不够高效
+		始终坚持使用迭代器Iterator来访问List
+		Iterator是由List实例调用iterator()方法创建的，Iterator对象始终拥有最高的访问效率
+		Iterator对象有两个方法：
+			boolean hasNext()：判断有无下一个元素
+			E next()：返回下一个元素
+		使用样例如下：
+			public static void main(String[] args) {
+				List<String> list = List.of("apple", "pear", "banana");
+				for (Iterator<String> it = list.iterator(); it.hasNext(); ) {
+					String s = it.next();
+					System.out.println(s);
+				}
+			}
+		但Java的for each可以自动帮助我们生成Iterator对象并遍历，如：
+			public static void main(String[] args) {
+				List<String> list = List.of("apple", "pear", "banana");
+				for (String s : list) {
+					System.out.println(s);
+				}
+			}
+	List和Array的转换
+		将List转变为Array有三种方法：
+			1.调用toArray()直接返回一个Object[]数组
+				这种方法会丢失类型信息，使用很少
+			2.给toArray(T[])传入一个类型相同的Array，把元素赋值到传入的Array中，如：
+				public static void main(String[] args) {
+					List<Integer> list = List.of(12, 34, 56);
+					Number[] array = list.toArray(new Number[3]);
+					for (Number n : array) {
+						System.out.println(n);
+					}
+				}
+				这样做的缺点在于，如果传入了类型不匹配的数组就会抛出ArrayStoreException
+				同时，如果数组大小太大会在余下元素中一律填入null
+				不过，可以传入一个大小为List.size()大小的数组
+			3.通过List接口定义的T[] toArray(IntFunction<T[]> generator)方法
+				Integer[] array = list.toArray(Integer[]::new);
+				这是最常用简洁的方法
+		将Array转变为List的可以直接用List.of(T ...)方法
+		但如果直接使用List<Integer> list = List.of(array)将传回一个只读的List集合，如果修改会抛出UnsupportedOperationException
+		如果需要一个可写的ArrayList，可以使用List<Integer> list = new ArrayList<Integer>(List.of(array))
+编写equals
+	

@@ -1,0 +1,159 @@
+注意***：
+	public class Main {
+		public static void main(String[] args) {
+			int[] scores = new int[] { 88, 77, 51, 66 };
+			Score s = new Score(scores);
+			s.printScores();
+			scores[2] = 99;
+			s.printScores();
+		}
+	}
+
+	class Score {
+		private int[] scores;
+		public Score(int[] scores) {
+			this.scores = scores;
+		}
+
+		public void printScores() {
+			System.out.println(Arrays.toString(scores));
+		}
+	}
+	修改外部的int数组会修改内部数据造成安全隐患，建议改为：
+		class Score {
+			private int[] scores;
+			public Score(int[] scores) {
+				this.scores = scores.clone();
+			}
+
+			public void printScores() {
+				System.out.println(Arrays.toString(scores));
+			}
+		}
+	用了clone方法后就是一个新数组了，与原本数组完全无关
+Java的clone()方法
+	(1)clone方法将对象复制了一份并返回给调用者。一般而言，clone()方法满足：
+		①对任何的对象x，都有x.clone() !=x//克隆对象与原对象不是同一个对象
+		②对任何的对象x，都有x.clone().getClass()= =x.getClass()//克隆对象与原对象的类型一样
+		③如果对象x的equals()方法定义恰当，那么x.clone().equals(x)应该成立。
+	(2)Java中对象的克隆
+		①为了获取对象的一份拷贝，我们可以利用Object类的clone()方法。
+		②在派生类中覆盖基类的clone()方法，并声明为public。
+		③在派生类的clone()方法中，调用super.clone()。
+		④在派生类中实现Cloneable接口。
+链式操作：
+	某些方法可以连续链式的进行，如：
+		public class Main {
+			public static void main(String[] args) {
+				var sb = new StringBuilder(1024);
+				sb.append("Mr ")
+				  .append("Bob")
+				  .append("!")
+				  .insert(0, "Hello, ");
+				System.out.println(sb.toString());
+			}
+		}
+	链式操作方法的关键在于返回值为this，这样就可以不断链式的调用
+~Java核心类~：
+String：
+	String是引用类型，本身也是一个class，但Java编译器会对String特殊处理
+	String内部是通过一个char[]数组实现的，但是其声明为private final char[]字段，且没有声明修改char[]的方法，故Java的字符串是不可变的
+	字符串比较用equals方法，使用方法为：s1.equals(s2)，相同返回true，否则返回false，如果要忽略大小写的比较，用equalsIgnoreCase()方法
+	可以用trim()方法去除字符串首尾空白字符(包括\t,\r,\n)
+	trim方法并没有改变字符串的内容，而是返回了一个新字符串
+	可以用strip()方法移除中文字符中的空格
+	可以用contains方法搜索子串，contains方法的参数是CharSequence而不是String，前者是String的父类
+	还可以用startsWith，endsWith来判断开始和结尾
+	可以用substring来提取子串：
+		一个参数："Hello".substring(2); // "llo"第二位往后
+		两个参数："Hello".substring(2, 4); "ll"[2,4)位
+		同样，索引号从0开始
+	可以用isEmpty()和isBlank()来判断是否为空和空白字符串
+	可以用replace替换子串，如：
+		s.replace('l', 'w'); // 所有字符'l'被替换为'w'
+	也可以通过正则表达式替换
+	可以用split()方法分割字符串，同样要用正则表达式
+	可以用join静态方法拼接字符串，如：
+		String[] arr = {"A", "B", "C"};
+		String s = String.join("***", arr); // "A***B***C"
+	可以用formatted方法和format静态方法格式化字符串，如：
+		String s = "Hi %s, your score is %d!";
+		System.out.println(s.formatted("Alice", 80));
+		System.out.println(String.format("Hi %s, your score is %.2f!", "Bob", 59.5));
+	可以用valueOf静态方法来把任意类型转化为字符串
+	可以用Integer.parseInt将String转化为int
+	String和char[]可以互相转换：
+		char[] cs = "Hello".toCharArray(); // String -> char[]
+		String s = new String(cs); // char[] -> String
+StringBuilder：
+	StringBuilder是一种可变字符串对象
+	如果用循环代码直接用+拼接字符串会在每次循环创建新的字符串对象，而这些对象都是临时对象，浪费内存同时影响GC效率
+	高效拼接字符串用StringBuilder类，它是一个可变对象，可以预分配缓冲区，这样，往StringBuilder中新增字符时，不会创建新的临时对象，如：
+		StringBuilder sb = new StringBuilder(1024);
+		for (int i = 0; i < 1000; i++) {
+			sb.append(',');
+			sb.append(i);
+		}
+		String s = sb.toString();
+	StringBuilder类还可以进行链式操作
+	StringBuffer也是一种可变字符串对象，相较于SringBuilder，它具有线程安全性，但会导致执行速度下降
+包装类型：
+	包装类型可以将java的一个基本类型转化为对象，即引用类型
+JavaBean：
+	只由字段和对应的getter和setter方法构成的public类被称为JavaBean，其主要用途是用于传输数据
+	可以直接使用Java核心库提供的Introspector枚举一个JavaBean的所有属性，如：
+		public static void main(String[] args) throws Exception {
+			BeanInfo info = Introspector.getBeanInfo(Person.class);
+			for (PropertyDescriptor pd : info.getPropertyDescriptors()) {
+				System.out.println(pd.getName());
+				System.out.println("  " + pd.getReadMethod());
+				System.out.println("  " + pd.getWriteMethod());
+			}
+		}
+	上述代码将输出所有属性和对应的读写方法
+枚举类：
+	直接用enum来声明枚举类型，如：
+		enum Weekday {
+			SUN, MON, TUE, WED, THU, FRI, SAT;
+		}
+	enum声明的类具有类型信息，若使用如下语句则报错，原因是类型不匹配
+		if(int day == Weekdat.SUN) 
+	不同枚举类型也不能互相比较或者赋值
+	枚举类继承自java.lang.Enum，无法被继续继承，不能通过new创建实例
+	枚举类自带一些方法如下：
+		name()，返回常量名，如：
+			String s = Weekdat.SUN.name();//"SUN"
+		ordinal()，返回位次，从0开始计数，如：
+			int n = Weekday.MON.ordinal();//1
+不变类：
+	如String、Integer等都是不变类，不变类具有以下特点：
+	1.定义class时使用final，无法派生子类；
+    2.每个字段使用final，保证创建实例后无法修改任何字段。
+记录类：(Java14)
+	(暂不学习)
+BigInteger：
+	java.math.BigInteger继承自Number，可以模拟任意大小的整数，是不可变对象，缺点是比较慢
+	可以用byteValue(), longValue()等来转化为基本类型，但会丢失高位信息。
+	如果不希望丢失信息可以采用byteValueExact(), longValueExact()等，超出时抛出ArithmeticException
+	计算的时候要实例方法add等
+BigDecimal：
+	同样继承自Number，可以模拟任意大小且精度完全准确的浮点数，同样是不可变对象
+	可以用scale()方法表示小数位数，如：
+		BigDecimal d1 = new BigDecimal("123.4500");
+		System.out.println(d1.scale());//输出4
+	对BigDecimal做加、减、乘时，精度不会丢失，但是做除法时，无法除尽时必须指定精度以及如何进行截断：
+		BigDecimal d1 = new BigDecimal("123.456");
+		BigDecimal d2 = new BigDecimal("23.456789");
+		BigDecimal d3 = d1.divide(d2, 10, RoundingMode.HALF_UP); // 保留10位小数并四舍五入
+		BigDecimal d4 = d1.divide(d2); // 报错：ArithmeticException，因为除不尽
+	可以用divideAndRemainder()方法做除法和取余数，返回BigDecimal数组，包含两个元素，分别时商和余数
+	比较BigDecimal时必须使用compareTo()方法，不能使用equals()方法，equals()方法不仅比较数值大小，还会比较scale大小。
+工具类：
+	Math类：数学计算
+	Random类：伪随机数，如：
+		Random r = new Random();
+		r.nextInt(); // 2071575453,每次都不一样
+		r.nextInt(10); // 5,生成一个[0,10)之间的int
+		r.nextLong(); // 8811649292570369305,每次都不一样
+		r.nextDouble(); // 0.3716...生成一个[0,1)之间的double
+	SecureRandom：安全随机数

@@ -1,0 +1,234 @@
+注意事项：
+1.泛型的向上转型只能转相同的T类型
+~泛型~
+泛型是一种代码模板，可以一套代码套用各种类型
+泛型简介
+	泛型就是通过编写模板代码从而适应任意类型，在使用时无需强制类型转换，它通过编译器对类型检查
+	泛型的向上转型比较特殊，如：
+		ArrayList<T>可以向上转型为List<T>
+		ArrayList<Integer>不能向上转型为List<Number>或ArrayList<Number>
+使用泛型
+	如果不定义泛型类型，泛型类型实际上就是Object，相当于没有作用
+	定义泛型类型<String>后，List<T>的泛型接口就变成强类型List<String>，如：
+		List<String> list = new ArrayList<String>();
+		list.add("Hello");
+		list.add("World");
+		// 无强制转型:
+		String first = list.get(0);
+		String second = list.get(1);
+	如果编译器可以自动推断泛型类型就可以省略后面的泛型类型，如：
+		List<Number> list = new ArrayList<>();
+	泛型接口：
+		如接口Comparable<T>就是一个泛型接口，实现接口的类必须实现正确的泛型类型
+编写泛型
+	静态方法：
+		泛型类型<T>不能用于静态方法
+		如果在static修饰符后面加一个<T>就可以通过编译，但此时的<T>与泛型本身的<T>完全没有关系了，将T更换为K也无影响
+		如：
+			public class Pair<T> {
+				private T first;
+				private T last;
+				public Pair(T first, T last) {
+					this.first = first;
+					this.last = last;
+				}
+				public T getFirst() { ... }
+				public T getLast() { ... }
+
+				// 静态泛型方法应该使用其他类型区分:
+				public static <K> Pair<K> create(K first, K last) {
+					return new Pair<K>(first, last);
+				}
+			}
+		上述代码中K与T无关系
+	多个泛型类型：
+		泛型还可以定义多个类型，如：
+			public class Pair<T, K> {
+				private T first;
+				private K last;
+				public Pair(T first, K last) {
+					this.first = first;
+					this.last = last;
+				}
+				public T getFirst() { ... }
+				public K getLast() { ... }
+			}
+		使用时需要指出两种类型，如：
+			Pair<String, Integer> p = new Pair<>("test", 123);
+		Java标准库中的Map<K,V>就是两种泛型
+擦拭法
+	不同语言的泛型实现方式不尽相同，Java使用的方法时擦拭法
+	擦拭法指虚拟机对泛型一无所知，所有工作都是编译器做的
+	Java的泛型是由编译器在编译时实行的，编译器内部永远把所有类型T作为Object处理，但在需要时，编译器会自动实现安全的强制转型
+	由此可知Java泛型的缺陷：
+		1.<T>不能是基本类型，因为Object无法持有基本类型
+		2.无法取得带有泛型的Class，即无法获取Array<T>.class
+		3.无法判断带有泛型的类型，即无法使用instanceof
+		4.不能在泛型中直接实例化T，如：
+			public class Pair<T> {
+				private T first;
+				private T last;
+				public Pair() {
+					// Compile error:
+					first = new T();
+					last = new T();
+				}
+			}
+		  如果要实例化T类型，使用时必须传入T.class，然后利用反射调用构造方法
+	不正确的覆写方法：
+		由于T会被编译器擦拭为Object，继承的方法可能会在实际上变成覆写，编译器就会阻止，如：
+		public class Pair<T> {
+			public boolean equals(T t) {
+				return this == t;
+			}
+		}
+		equals(T t)实际上会变成equals(Object t)
+		应当换一个方法名，避开Object中存在的方法名
+	泛型继承：
+		一个类可以继承自一个泛型的强类，如：
+			public class IntPair extends Pair<Integer>
+		由于子类没有泛型类型，可以正常使用
+		泛型继承后子类中的T已经被替换成了强类型Integer
+		此时可以通过子类获取Pair<T>中的T的Class信息，具体过程如下：
+			public static void main(String[] args) {	
+				Class<IntPair> clazz = IntPair.class;
+				Type t = clazz.getGenericSuperclass();
+				if (t instanceof ParameterizedType) {
+					ParameterizedType pt = (ParameterizedType) t;
+					Type[] types = pt.getActualTypeArguments(); // 可能有多个泛型类型
+					Type firstType = types[0]; // 取第一个泛型类型
+					Class<?> typeClass = (Class<?>) firstType;
+					System.out.println(typeClass); // Integer
+				}
+			}
+		由于Java中引入了泛型，标识类型就需要更多变量，Java的类型系统结构如下：
+								  ┌────┐
+								  │Type│
+								  └────┘
+									 ▲
+									 │
+			   ┌────────────┬────────┴─────────┬───────────────┐
+			   │            │                  │               │
+			┌─────┐┌─────────────────┐┌────────────────┐┌────────────┐
+			│Class││ParameterizedType││GenericArrayType││WildcardType│
+			└─────┘└─────────────────┘└────────────────┘└────────────┘
+通配符专题
+	约定下T, E, K, V, ?的使用如下：
+		？表示不确定的 java 类型
+		T (type) 表示具体的一个java类型
+		K V (key value) 分别代表java键值中的Key Value
+		E (element) 代表Element
+	? 无界通配符：
+		<?>表示可以持有任何类型
+		通配符在局部变量声明中没有意义，但在为一个方法声明一个参数时是非常重要的，如：
+			static int countLegs (List<? extends Animal > animals ) {	
+				int retVal = 0;	
+				for ( Animal animal : animals )	
+				{	
+					retVal += animal.countLegs();	
+				}	
+				return retVal;	
+			}	
+			static int countLegs1 (List< Animal > animals ){	
+				int retVal = 0;	
+				for ( Animal animal : animals )	
+				{	
+					retVal += animal.countLegs();	
+				}	
+				return retVal;	
+			}	
+			public static void main(String[] args) {	
+				List<Dog> dogs = new ArrayList<>();	
+				 // 不会报错	
+				countLegs( dogs );	
+				// 报错	
+				countLegs1(dogs);	
+			}
+		如果要求传入的值可以是子类则必须使用?通配符
+	<? extends E> 上界通配符：
+		在类型参数中使用extends的表示泛型中的参数必须是E或者E的子类，好处是泛型中可以使用E的方法
+		如果在方法中使用上界限定，需要在前面声明限定，如：
+			private <K extends A> E test(K arg) {
+				return arg;
+			}
+		限定了K必须是A或A的子类
+	<? super E> 下界通配符：
+		用super声明表示参数化的类型可能是所指定的类型或者此类型的父类型，直至Object
+	?和T的区别：
+		?和T都表示不确定的类型，区别在于我们可以对T操作，但对?不行
+		总结就是T是一个确定的未知类型，而?是一个不确定的未知类型
+		T通常用于泛型类和泛型方法，而?不能用于定义泛型类和泛型方法
+		具体如下：
+			1.T可以用来确保泛型参数的一致性，?不行
+			2.T可以多重限定而?不行，设定多重限定要使用&符号，如：
+				T extends A & B
+			3.T只具有一种限定方式，即extends，而?有两种限定方式，即extends和super
+	Class<T>和Class<?>区别：
+		在实例化时Class<T>要替换成具体的类，而Class<?>由于适配任何类型，可以作为字段用于声明时的限制情况
+extends通配符
+	观察以下代码：
+		public class Main {
+			public static void main(String[] args) {
+				Pair<Integer> p = new Pair<>(123, 456);
+				int n = add(p);
+				System.out.println(n);
+			}
+
+			static int add(Pair<? extends Number> p) {
+				Number first = p.getFirst();
+				Number last = p.getLast();
+				p.setFirst(new Integer(first.intValue() + 100));	//error
+				p.setLast(new Integer(last.intValue() + 100));		//error
+				return p.getFirst().intValue() + p.getFirst().intValue();
+			}
+
+		}
+
+		class Pair<T> {
+			private T first;
+			private T last;
+
+			public Pair(T first, T last) {
+				this.first = first;
+				this.last = last;
+			}
+
+			public T getFirst() {
+				return first;
+			}
+			public T getLast() {
+				return last;
+			}
+			public void setFirst(T first) {
+				this.first = first;
+			}
+			public void setLast(T last) {
+				this.last = last;
+			}
+		}
+	出现编译错误，原因在于?的不确定性，若在一开始声明的Pair<Interger>是Pair<Double>就会导致p.setFirst出现问题，所以编译器阻止了这种语法
+	由此得出<? extends E>的限制：方法内的set无法传递任何E的子类给方法(除了null)
+	这同时保证了方法内部调用set时只允许获取E类型，若?为E的子类型，则方法内将不可能修改该泛型参数，保证了该参数的只读性
+super通配符
+	同样，super保证了方法内部调用get时只允许获取E类型，即该参数只写
+	在调用get或set时，extends为只读而super为只写
+泛型与反射
+	Java的部分反射API也是泛型，如Class<T>，如果直接使用Class会报warning
+	构造方法Constructor<T>也是泛型
+	可以声明带有泛型的数组，但不能用new操作符创建带泛型的数组，必须使用强制类型转换，如：
+		Pair<String>[] ps = null;	//ok
+		Pair<String>[] ps = new Pair<String>[2];	//compile error!
+		Pair<String>[] ps = (Pair<String>[]) new Pair[2];	//compile warning
+	由于将一个未知的Pair数组强制转换为Pair<String>，编译器会报警，但实际上一个新的空数组转换是安全的
+	但如果使用一个变量则可能导致ClassCastException，如：
+		Pair[] arr = new Pair[2];
+		Pair<String>[] ps = (Pair<String>[]) arr;
+
+		ps[0] = new Pair<String>("a", "b");
+		arr[1] = new Pair<Integer>(1, 2);
+
+		// ClassCastException:
+		Pair<String> p = ps[1];
+		String s = p.getFirst();
+	必须借助Class<T>创建泛型数组：Array.newInstance(Class<T>, 5)
+	还可以用可变参数创建泛型数组，但极不安全，不推荐使用
