@@ -1,6 +1,10 @@
 注意事项：
 1.Java访问集合总是通过统一的方式：迭代器(Iterator)来实现
 2.Java的集合有部分是遗留类和遗留接口，不应该使用，如Hashtable，Vector，Stack，Enumeration<E>等
+3.Map不保证顺序
+4.不要使用Properties的get()和put()方法
+5.禁止把null添加到队列中
+6.Stack是一个遗留类，不是一个接口
 ~集合~
 集合简介
 	集合即多个元素构成的整体，数组相较于集合有以下限制：
@@ -79,4 +83,209 @@
 		但如果直接使用List<Integer> list = List.of(array)将传回一个只读的List集合，如果修改会抛出UnsupportedOperationException
 		如果需要一个可写的ArrayList，可以使用List<Integer> list = new ArrayList<Integer>(List.of(array))
 编写equals
-	
+	List内部不是通过==判断两个元素是否相等的，而是通过使用equals()方法判断的
+	要正确使用List的contains()、indexOf()，放入的实例必须覆写equals()方法
+	编写equals：
+		要求满足以下四个原则：
+		自反性、对称性、传递性、一致性(对于不变的非空x，y，x.equals()总是返回相同的结果)
+		可以使用自动生成的equals()
+使用Map
+	Map<K, V>是一种键值对的映射表，作用就是高效的通过key查找value
+	使用put(K key, V value)将一个新的映射加入Map中
+	使用get(K key)寻找键的值
+	和List类似，Map也是一个接口，最常用的实现类是HashMap
+	如果只想查找某个key是否存在，可以调用boolean containsKey(K key)方法
+	如果重复放入相同的key将把原本的value换成新的value且不会报错
+	遍历Map：
+		要遍历key可以使用for each循环遍历Map实例的keySet()返回的Set集合
+		要同时遍历key和value可以使用for each循环遍历Map对象的entrySet()集合，它包含每个key-value映射，如：
+			public static void main(String[] args) {
+				Map<String, Integer> map = new HashMap<>();
+				map.put("apple", 123);
+				map.put("pear", 456);
+				map.put("banana", 789);
+				for (Map.Entry<String, Integer> entry : map.entrySet()) {
+					String key = entry.getKey();
+					Integer value = entry.getValue();
+					System.out.println(key + " = " + value);
+				}
+			}
+	要注意，Map不保证顺序
+编写equals和hashCode
+	HashMap快速拿到value的原因是内部通过空间换时间的方法用一个大数组存储所有value
+	要保证能够获取value，要求使用不同的相等的key必须获取得到相同的value，即key需要覆写equals()
+	相等的key必须要计算出相同的索引，即key必须覆写hashCode()方法
+	也就是说，对于两个实例a和b：
+		如果a和b相等，那么a.equals(b)一定为true，则a.hashCode()必须等于b.hashCode()；
+		如果a和b不相等，那么a.equals(b)一定为false，则a.hashCode()和b.hashCode()尽量不要相等。
+	上述第一条规范是正确性，必须保证实现，否则HashMap不能正常工作。
+	而第二条如果尽量满足，则可以保证查询效率，因为不同的对象，如果返回相同的hashCode()，会造成Map内部存储冲突，使存取的效率下降。
+	在计算hashCode()时，反复使用31*h，这样做的目的是为了尽量把不同实例的hashCode()均匀分布到整个int范围
+	可以借助Objects.hash()来计算hashCode
+使用EnumMap
+	如果key的对象是enum类型，还可以使用EnumMap，EnumMap使用一个小的数组存储value，且根据enum直接定位，不需要计算hashCode()，效率极高且不会浪费空间
+	构造函数的参数是enum类的class对象
+使用TreeMap
+	HashMap的内部Key是无序的，如果想要使用有序的Key，可以使用SortedMap
+	SortedMap是一个接口，它的实现类是TreeMap
+	SortedMap保证遍历时以Key的顺序排序，排序方式与放入次序无关，而与实现的Comparable的compare方法有关 
+	SortedMap要求Key类型必须实现Comparable接口
+	如果Key类没有实现Comparable接口，那就必须在创建TreeMap时指定一个自定义排序算法，如：
+		public class Main {
+			public static void main(String[] args) {
+				Map<Person, Integer> map = new TreeMap<>(new Comparator<Person>() {
+					public int compare(Person p1, Person p2) {
+						return p1.name.compareTo(p2.name);
+					}
+				});
+				map.put(new Person("Tom"), 1);
+				map.put(new Person("Bob"), 2);
+				map.put(new Person("Lily"), 3);
+				for (Person key : map.keySet()) {
+					System.out.println(key);
+				}
+				// {Person: Bob}, {Person: Lily}, {Person: Tom}
+				System.out.println(map.get(new Person("Bob"))); // 2
+			}
+		}
+
+		class Person {
+			public String name;
+			Person(String name) {
+				this.name = name;
+			}
+			public String toString() {
+				return "{Person: " + name + "}";
+			}
+		}
+	TreeMap不需要使用equals()和hashCode()
+	TreeMap在比较两个Key是否相等时依赖Key的compareTo()方法或compare()方法，因此在Key相等时必须返回0
+使用Properties
+	编写应用程序时常需要读写配置文件，其特点是键值对为String-String型，可以用Map<String, String>来表示
+	由于配置文件很常用，所以Java库提供了Properties来表示一组配置
+	Properties内部本质上是一个Hashtable
+	读取配置文件：
+		Java的默认配置文件以.properties为扩展名，每行以key=value表示，以#开头的是注释
+		读取配置文件有三步：
+			1.创建Properties实例
+			2.调用load()读取文件
+			3.调用getProperty()获取配置
+		如：
+			String f = "setting.properties";
+			Properties props = new Properties();
+			props.load(new java.io.FileInputStream(f));
+
+			String filepath = props.getProperty("last_open_file");
+			String interval = props.getProperty("auto_save_interval", "120");
+		调用getProperty()时，如果key不存在将返回null
+		如果提供一个默认值，那么key不存在将返回默认值
+		也可以从classpath读取.properties文件，load(InputStream)方法接受的是InputStream，表示一个字节流，它可以是文件流，也可以是jar包中的资源流
+		如果有多个.properties文件，可以反复调用load()读取，后读取的会覆盖已读取的键值
+		不要使用get()方法和put()方法
+	写入配置文件：
+		通过setProperty()修改Properties实例
+		通过store(FileOutputStream)方法将配置文件写入文件
+	编码问题：
+		从JDK9开始，Java的.properties文件可以使用UTF-8编码
+		由于load(InputStream)默认使用ASCII编码读取字节流，可能导致乱码，使用另一个重载方法load(Reader)来读取
+		如：
+			Properties props = new Properties();
+			props.load(new FileReader("settings.properties", StandardCharsets.UTF_8));
+		InputStream是字节流，Reader是字符流，字符流在内存中以char类型表示
+使用Set
+	如果需要存储不重复的key且不需要value就可以使用Set
+	Set的主要方法有：		
+		将元素添加进Set<E>：boolean add(E e)
+		将元素从Set<E>删除：boolean remove(Object e)
+		判断是否包含元素：boolean contains(Object e)
+	Set相当于只存储key的Map
+	Set<T>的T类必须覆写equals()和hashCode()方法
+	Set也是一个接口，最简单的实现类是HashSet
+	Set同样不保证有序，要想保证有序需要实现SortedSet接口
+	HashSet是无序的，而TreeSet是有序的
+使用Queue
+	Queue是一个先进先出的有序表，方法有下：
+		获取队列长度：int size()
+		添加元素到队尾：boolean add(E)/boolean offer(E)
+		获取队首元素并移除：E remove()/E poll()
+		获取队首元素但不移除：E element()/E peek()
+	添加、删除和获取队列元素有两个方法，这两个方法的行为在失败时是不同的
+							throw Exception	返回false或null
+		添加元素到队尾		add(E e)		boolean offer(E e)
+		取队首元素并删除	E remove()		E poll()
+		取队首元素但不删除	E element()		E peek()
+	异常为IllegalStateException
+	禁止把null添加到队列中
+	有的Queue的实现类有最大长度限制，有的没有，常用的Queue是LinkedList
+	LinkedList既是一个List，也是一个Queue，具体使用取决于引用类型，如：
+		List<String> list = new LinkedList<>();		//这是一个List
+		Queue<String> queue = new LinkedList<>();	// 这是一个Queue
+使用PriorityQueue(优先队列)
+	可以使用PriorityQueue实现优先级队列
+	PriorityQueue的出队顺序与元素的优先级有关，总是返回优先级高的元素
+	要使用PriorityQueue，首先应该给每个元素定义优先级，即实现Comparable接口，或提供一个Comparator对象来判断两个元素的顺序
+使用Deque(Double ended queue双端队列)
+	Deque的主要方法有：
+		添加元素到队尾：addLast(E e)/offerLast(E e)
+		获取队首元素并移除：removeFirst()/E pollFirst()
+		获取队首元素但不移除：E elementFirst()/E peekFirst()
+		添加元素到队首：addFirst(E e)/offerFirst(E e)
+		获取队尾元素并移除：removeLast()/E pollLast()
+		获取队尾元素但不移除：E elementLast()/E peekLast()
+	Deque接口实际上扩展自Queue，主要实现类有ArrayDeque和LinkedList
+使用Stack
+	Stack是后进先出的有序表，主要方法有：
+		入栈：push(E)
+		出栈：pop()
+		取栈顶元素但不出栈：peek()
+	Stack是一个遗留类，不是一个接口，因此只能用Deque来代替Stack使用
+	如果将Deque作为Stack使用，只调用push()等方法，不要调用其它方法
+	Stack在JVM的作用：
+		JVM在处理Java方法调用时会通过栈来维护方法调用层次
+		JVM会创建方法调用栈，每调用一个方法会将参数入栈然后执行对应的方法；当方法返回时，返回值压栈，调用方法通过出栈操作获得方法返回值。
+		方法调用栈有容量上限，避免过渡嵌套调用，否则引发StackOverflowError
+使用Iterator
+	Java的所有集合类都可以使用for each循环(Map会迭代每个key)
+	Java编译器会自动将for each循环通过Iterator改写为普通for循环
+	通过Iterator对象遍历集合的模式称为迭代器模式
+	使用迭代器的好处在于，调用方总是以统一的方式遍历各种集合类型，而不必关系它们内部的存储结构
+	如果编写了一个集合类，想要使用for each循环，需要满足以下条件：
+		1.集合类实现Iterable接口
+		2.用Iterator对象迭代集合内部数据
+	Iterable接口要求集合类能够通过iterator()方法返回一个Iterator对象
+	在编写Iterator时可以使用一个内部类来实现Iterator接口
+使用Collections
+	Collections是JDK的工具类，提供了一系列静态方法
+	创建空集合：
+		Collections提供了一系列方法来创建空集合：
+			创建空List：List<T> emptyList()
+			创建空Map：Map<K, V> emptyMap()
+			创建空Set：Set<T> emptySet()
+		返回的空集合是只读的，无法向其中添加或删除元素
+		也可以用.of()来创建空集合
+	创建单元素集合：
+		Collections提供了一系列方法来创建一个单元素集合：
+			创建一个元素的List：List<T> singletonList(T o)
+			创建一个元素的Map：Map<K, V> singletonMap(K key, V value)
+			创建一个元素的Set：Set<T> singleton(T o)
+		返回的单元素集合也是只读的，无法向其中添加或删除元素
+		同样可以用.of()创建
+	排序：
+		Collections可以对List排序，但不能传入只读的List
+		方法为Collections.sort(list)
+	洗牌：
+		Collectiongs可以将一个List随机打乱顺序
+		方法为Collections.shuffle(list)
+	不可变集合：
+		Collections还提供了一组方法把可变集合封装成不可变集合：
+			封装成不可变List：List<T> unmodifiableList(List<? extends T> list)
+			封装成不可变Set：Set<T> unmodifiableSet(Set<? extends T> set)
+			封装成不可变Map：Map<K, V> unmodifiableMap(Map<? extends K, ? extends V> m)
+		但是，如果对原始的可变List修改会直接影响到不可变的集合
+		因此，建议在返回只读List后立刻将原引用清空为null
+	线程安全集合：
+		Collections还提供了一组方法，可以把线程不安全的集合变为线程安全的集合：
+			变为线程安全的List：List<T> synchronizedList(List<T> list)
+			变为线程安全的Set：Set<T> synchronizedSet(Set<T> s)
+			变为线程安全的Map：Map<K,V> synchronizedMap(Map<K,V> m)
+		但实际上在Java5引入了并发集合类后，上述方法已经无用

@@ -1,0 +1,51 @@
+注意事项：
+1.谨记，Java的char占两个字节
+2.Reader和Writer本质上是一个能自动编解码的InputStream和OutputStream
+3.注意字符串中要用\\转义\
+4.构造File对象没有任何磁盘操作
+~IO~
+IO即输入和输出，IO流是一种顺序读写数据的模式，其特点是单向流动
+关键概念：
+字节流和字符流：
+	字节流(即IO流)以byte为最小单位，如InputStream和OutputStream接口
+	字符流以char为最小单位，如Reader和Writer接口
+同步IO和异步IO：
+	同步IO是指，读写IO时代码必须等待数据返回后才继续执行后续代码
+		优点是代码编写简单
+		缺点是CPU执行效率低
+	异步IO是指，读写IO时仅发出请求，然后立刻执行后续代码
+		优点是CPU执行效率高
+		缺点是代码编写复杂
+	java.io提供了同步IO，而java.nio为异步IO
+File对象
+	File对象的构造方法参数为文件路径的String
+	构造File对象时既可以使用绝对路径，也可以使用相对路径
+	注意Windows中字符串要用\\转义\，Linux使用/则不需要转义
+	File对象可以返回三种形式的路径：
+		1.getPath()			返回构造方法传入的路径
+		2.getAbsolutePath()	返回绝对路径
+		3.getCanonicalPath()返回规范路径，即将.和..转化为标准的绝对路径
+	Windows和Linux的路径分隔符不同，File对象有一个静态变量separator用于表示当前平台的系统分隔符：
+		System.out.println(File.separator); // 根据当前平台打印"\"或"/"
+	文件和目录：
+		File对象既可以表示文件，也可以表示一个目录
+		调用isFile()判断是否是一个存在的文件，调用isDirectory判断是否是一个存在的目录
+		如果File对象获取了一个文件，可以进一步判断文件的权限和大小：
+			boolean canRead()：是否可读
+			boolean canWrite()：是否可写
+			boolean canExecute()：是否可执行(对目录指能否列出文件和子目录)
+			long length()：文件字节大小
+	创建和删除文件：
+		当File对象表示一个文件时，可以通过createNewFile()创建一个新文件，用delete()删除文件
+		可以用静态方法createTempFile(String, String)创建一个临时文件，参数为临时文件的前缀和后缀
+		可以用deleteOnExit()方法请求JVM在退出时自动删除文件
+	遍历文件和目录：
+		当File表示一个目录时，可以用list()和listFiles()列出目录下的文件和子目录，listFiles的重载方法可以过滤文件
+		创建和删除目录使用以下方法：			
+			boolean mkdir()：创建当前File对象表示的目录；
+			boolean mkdirs()：创建当前File对象表示的目录，并在必要时将不存在的父目录也创建出来；
+			boolean delete()：删除当前File对象表示的目录，当前目录必须为空才能删除成功。
+	Path对象：
+		Path对象和File对象相似但操作更简单，更适用用目录的拼接遍历等操作
+InputStream
+	
